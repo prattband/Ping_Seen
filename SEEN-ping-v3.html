@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SEEN — A Ping Story</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#08080f;--s1:#111118;--s2:#1a1a24;--s3:#222230;
+  --b1:rgba(255,255,255,0.07);--b2:rgba(255,255,255,0.14);
+  --t1:#eeeef5;--t2:#8888a8;--t3:#50506a;
+  --pink:#e8418f;--purple:#9b5de5;--green:#2dce89;--blue:#3a9bdc;--amber:#f7b731;
+}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:#04040a;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:16px;gap:10px;color:var(--t1);
+}
+.label{font-size:10px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;}
+
+/* PHONE */
+.phone{
+  width:340px;height:680px;background:var(--bg);
+  border-radius:40px;border:1.5px solid rgba(255,255,255,0.09);
+  position:relative;overflow:hidden;
+  box-shadow:0 40px 90px rgba(0,0,0,0.85);
+}
+@media(max-width:380px){
+  .phone{width:100%;height:calc(100svh - 64px);border-radius:26px;}
+}
+
+/* SCREENS */
+.scr{position:absolute;inset:0;display:none;flex-direction:column;background:var(--bg);}
+.scr.on{display:flex;}
+
+/* SBAR */
+.sbar{height:40px;padding:12px 20px 0;display:flex;justify-content:space-between;
+  align-items:center;font-size:11px;font-weight:600;flex-shrink:0;}
+
+/* PROGRESS */
+.prog{height:2px;background:var(--s3);flex-shrink:0;}
+.pbar{height:100%;background:linear-gradient(90deg,var(--purple),var(--pink));transition:width .6s;}
+
+/* SCROLL */
+.roll{overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch;}
+.roll::-webkit-scrollbar{width:0;}
+
+/* MESSAGES */
+.msgs{padding:10px 12px 8px;display:flex;flex-direction:column;gap:4px;}
+.dlbl{text-align:center;font-size:10px;color:var(--t3);padding:5px 0;margin:2px 0;}
+.row{display:flex;gap:6px;align-items:flex-end;}
+.row.me{flex-direction:row-reverse;}
+.col{display:flex;flex-direction:column;max-width:74%;}
+.col.me{align-items:flex-end;}
+.nm{font-size:10px;color:var(--t3);margin-bottom:2px;padding-left:2px;}
+.tm{font-size:10px;color:var(--t3);margin-top:2px;padding-left:2px;}
+.tm.r{text-align:right;padding-right:2px;padding-left:0;}
+.bbl{border-radius:14px 14px 14px 4px;padding:8px 11px;font-size:13px;
+  line-height:1.5;word-break:break-word;background:var(--s2);color:var(--t1);}
+.bbl.me{border-radius:14px 14px 4px 14px;
+  background:linear-gradient(135deg,var(--purple),#7040c0);color:#fff;}
+.bbl.anon{background:rgba(232,65,143,.1);border:1px solid rgba(232,65,143,.2);color:#f0d0e0;}
+.bbl.guilt{background:rgba(247,183,49,.08);border:1px solid rgba(247,183,49,.18);color:var(--amber);}
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:700;color:#fff;flex-shrink:0;font-size:11px;}
+
+/* NOTIF BUBBLES */
+.notif-item{display:flex;align-items:flex-start;gap:8px;
+  background:var(--s1);border:1px solid var(--b1);border-radius:10px;
+  padding:9px 11px;margin-bottom:6px;font-size:12px;line-height:1.5;}
+.notif-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:3px;}
+
+/* TYPING */
+.typing{display:flex;gap:3px;align-items:center;padding:9px 12px;
+  background:var(--s2);border-radius:14px;width:fit-content;}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--t3);
+  animation:dp 1.2s ease infinite;}
+.dot:nth-child(2){animation-delay:.2s;}
+.dot:nth-child(3){animation-delay:.4s;}
+@keyframes dp{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:1;transform:translateY(-3px)}}
+
+/* CHOICE PANEL */
+.cpanel{border-top:1px solid var(--b1);background:var(--s3);flex-shrink:0;}
+.clbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--t3);text-align:center;padding:7px 12px 3px;}
+.cbtn{background:transparent;border:none;border-bottom:1px solid var(--b1);
+  color:var(--t1);padding:11px 13px;font-size:13px;cursor:pointer;
+  text-align:left;font-family:inherit;line-height:1.4;width:100%;
+  display:flex;gap:8px;align-items:flex-start;transition:background .12s;}
+.cbtn:last-child{border-bottom:none;}
+.cbtn:active{background:rgba(255,255,255,0.04);}
+.cbtn.g .ct{color:var(--green);}
+.cbtn.b .ct{color:var(--t2);}
+.ci{flex-shrink:0;font-size:14px;margin-top:1px;}
+.ct{flex:1;}
+
+/* ROLE CARDS */
+.rcard{background:var(--s1);border:1.5px solid var(--b1);border-radius:16px;
+  padding:14px;cursor:pointer;margin-bottom:9px;transition:border-color .2s;}
+.rcard:active{border-color:var(--b2);}
+
+/* BUTTONS */
+.btnmain{background:linear-gradient(135deg,var(--pink),var(--purple));color:#fff;
+  border:none;border-radius:50px;padding:13px 22px;font-size:15px;font-weight:700;
+  cursor:pointer;width:100%;font-family:inherit;transition:transform .1s;}
+.btnmain:active{transform:scale(.97);}
+.btnmain:disabled{opacity:.4;}
+
+/* TOAST */
+.toast{position:absolute;top:48px;left:9px;right:9px;
+  background:var(--s3);border:1px solid var(--b2);border-radius:10px;
+  padding:9px 12px;font-size:12px;color:var(--t2);z-index:50;line-height:1.5;
+  opacity:0;transform:translateY(-6px);transition:opacity .22s,transform .22s;pointer-events:none;}
+.toast.on{opacity:1;transform:translateY(0);}
+.toast b{color:var(--t1);}
+
+/* SCORE BAR */
+.sbar-track{height:6px;background:var(--s3);border-radius:6px;overflow:hidden;}
+.sbar-fill{height:100%;border-radius:6px;
+  background:linear-gradient(90deg,var(--purple),var(--pink));
+  width:0;transition:width 1.3s cubic-bezier(.34,1.56,.64,1);}
+
+/* INSIGHT */
+.insight{background:var(--s1);border-radius:12px;padding:13px 14px;
+  margin-bottom:12px;border-left:3px solid var(--purple);}
+.ins-lbl{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--purple);margin-bottom:5px;}
+.ins-txt{font-size:12px;color:var(--t2);line-height:1.65;}
+.ins-txt b{color:var(--t1);}
+
+/* OPT BUTTONS */
+.obtn{background:var(--s1);border:1px solid var(--b1);border-radius:9px;
+  padding:9px 11px;font-size:12px;color:var(--t1);cursor:pointer;
+  text-align:left;font-family:inherit;line-height:1.4;width:100%;
+  margin-bottom:5px;transition:border-color .15s;}
+.obtn:active{background:var(--s2);}
+.obtn.sel{border-color:var(--purple);background:rgba(155,93,229,.12);}
+
+/* TIP */
+.tip{background:var(--s1);border-radius:9px;padding:9px 12px;
+  margin-bottom:7px;font-size:12px;color:var(--t2);
+  border-left:3px solid var(--purple);line-height:1.5;}
+
+/* FADE IN */
+@keyframes fi{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fi{animation:fi .25s ease both;}
+</style>
+</head>
+<body>
+<div class="label">SEEN · A Ping Story</div>
+<div class="phone" id="phone">
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════ SPLASH ═══════════ -->
+<div class="scr on" id="S0">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 30px;text-align:center;">
+    <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--pink),var(--purple));border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:10px;box-shadow:0 8px 30px rgba(232,65,143,.3);">💬</div>
+    <div style="font-size:30px;font-weight:800;letter-spacing:-.04em;background:linear-gradient(135deg,#fff 30%,rgba(255,255,255,.45));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">ping</div>
+    <div style="font-size:9px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase;margin-bottom:24px;">connect · share · vibe</div>
+    <div style="font-size:24px;font-weight:700;margin-bottom:8px;">SEEN</div>
+    <div style="font-size:13px;color:var(--t2);line-height:1.7;margin-bottom:26px;">One night. Three people.<br>Make choices. Feel the weight.</div>
+    <button class="btnmain" onclick="show('S1')">Start the story</button>
+    <div style="font-size:11px;color:var(--t3);margin-top:10px;">~5 min · Ages 13+ · Interactive</div>
+  </div>
+</div>
+
+<!-- ═══════════ ROLE PICK ═══════════ -->
+<div class="scr" id="S1">
+  <div class="sbar"><span>9:41</span><span style="font-size:9px;">▲▌▌</span></div>
+  <div class="prog"><div class="pbar" style="width:5%"></div></div>
+  <div style="padding:13px 16px 10px;border-bottom:1px solid var(--b1);">
+    <div style="font-size:16px;font-weight:700;">Who are you tonight?</div>
+    <div style="font-size:12px;color:var(--t2);margin-top:3px;">Same story. Three very different experiences.</div>
+  </div>
+  <div class="roll" style="padding:12px 14px;">
+    <div class="rcard" onclick="startAs('W')">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:7px;">
+        <div style="width:40px;height:40px;border-radius:11px;background:rgba(58,155,220,.12);display:flex;align-items:center;justify-content:center;font-size:20px;">👀</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--blue);">The Witness</div>
+          <div style="font-size:10px;color:var(--blue);opacity:.7;text-transform:uppercase;letter-spacing:.06em;">Bystander</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.6;">You're in the group chat when it happens. You see everything. You're not the one doing it — but what you do next is up to you.</div>
+    </div>
+    <div class="rcard" onclick="startAs('M')">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:7px;">
+        <div style="width:40px;height:40px;border-radius:11px;background:rgba(45,206,137,.12);display:flex;align-items:center;justify-content:center;font-size:20px;">💙</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--green);">The One It Happens To</div>
+          <div style="font-size:10px;color:var(--green);opacity:.7;text-transform:uppercase;letter-spacing:.06em;">Maya's story</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.6;">You're Maya. You posted your art and let yourself be seen. Now your phone won't stop. Walk through it from the inside.</div>
+    </div>
+    <div class="rcard" onclick="startAs('K')">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:7px;">
+        <div style="width:40px;height:40px;border-radius:11px;background:rgba(247,183,49,.12);display:flex;align-items:center;justify-content:center;font-size:20px;">🪞</div>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--amber);">The One Who Started It</div>
+          <div style="font-size:10px;color:var(--amber);opacity:.7;text-transform:uppercase;letter-spacing:.06em;">Kai's perspective</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--t2);line-height:1.6;">You're Kai. You shared something as a joke and the chat loved it. It's 1 AM and you can't sleep.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ WITNESS CHAT ═══════════ -->
+<div class="scr" id="SW">
+  <div class="sbar"><span>8:47 PM</span><span style="font-size:9px;">▌▌</span></div>
+  <div class="prog"><div class="pbar" style="width:35%"></div></div>
+  <div style="padding:9px 13px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:9px;background:var(--s1);flex-shrink:0;">
+    <div style="display:flex;">
+      <div class="av" style="width:24px;height:24px;background:linear-gradient(135deg,#e84393,#9b5de5);">K</div>
+      <div class="av" style="width:24px;height:24px;background:linear-gradient(135deg,#f7b731,#e84393);margin-left:-7px;border:2px solid var(--bg);">P</div>
+      <div class="av" style="width:24px;height:24px;background:linear-gradient(135deg,#3a9bdc,#9b5de5);margin-left:-7px;border:2px solid var(--bg);">J</div>
+    </div>
+    <div>
+      <div style="font-size:13px;font-weight:700;">🔥 the squad 🔥</div>
+      <div style="font-size:10px;color:var(--t3);">Kai, Priya, Jay + 7 others</div>
+    </div>
+  </div>
+  <div class="roll msgs" id="wmsgs"><div class="dlbl">Tuesday · 8:47 PM</div></div>
+  <div id="wcp" class="cpanel" style="display:none;"></div>
+</div>
+
+<!-- ═══════════ MAYA NOTIFS ═══════════ -->
+<div class="scr" id="SM">
+  <div class="sbar"><span>9:03 PM</span><span style="font-size:9px;">▌▌</span></div>
+  <div class="prog"><div class="pbar" style="width:35%"></div></div>
+  <div style="padding:9px 13px;border-bottom:1px solid var(--b1);background:var(--s1);flex-shrink:0;">
+    <div style="font-size:13px;font-weight:700;">🔔 Notifications</div>
+    <div style="font-size:10px;color:var(--t3);">ping · activity on your post</div>
+  </div>
+  <div class="roll" style="padding:10px 12px;" id="mmsgs"></div>
+  <div id="mcp" class="cpanel" style="display:none;"></div>
+</div>
+
+<!-- ═══════════ KAI NIGHT ═══════════ -->
+<div class="scr" id="SK">
+  <div class="sbar"><span>1:07 AM</span><span style="font-size:9px;">▌</span></div>
+  <div class="prog"><div class="pbar" style="width:35%"></div></div>
+  <div style="padding:9px 13px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:9px;background:var(--s1);flex-shrink:0;">
+    <div style="width:30px;height:30px;border-radius:50%;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:13px;">🔍</div>
+    <div>
+      <div style="font-size:13px;font-weight:700;">Browser</div>
+      <div style="font-size:10px;color:var(--t3);">Private tab · no history saved</div>
+    </div>
+  </div>
+  <div class="roll msgs" id="kmsgs"><div class="dlbl">Tuesday · 1:07 AM</div></div>
+  <div id="kcp" class="cpanel" style="display:none;"></div>
+</div>
+
+<!-- ═══════════ DM ═══════════ -->
+<div class="scr" id="SD">
+  <div class="sbar"><span>11:47 PM</span><span style="font-size:9px;">▌▌</span></div>
+  <div class="prog"><div class="pbar" style="width:75%"></div></div>
+  <div style="padding:9px 13px;border-bottom:1px solid var(--b1);display:flex;align-items:center;gap:9px;background:var(--s1);flex-shrink:0;" id="dmhdr">
+    <div style="width:32px;height:32px;border-radius:50%;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:14px;">🚫</div>
+    <div>
+      <div style="font-size:12px;font-weight:700;">@just_saying_what_everyone_thinks</div>
+      <div style="font-size:10px;color:var(--t3);">No profile · No followers</div>
+    </div>
+  </div>
+  <div class="roll msgs" id="dmsgs"></div>
+  <div id="dcp" class="cpanel" style="display:none;"></div>
+</div>
+
+<!-- ═══════════ REFLECT ═══════════ -->
+<div class="scr" id="SR">
+  <div class="sbar"><span>9:41</span><span style="font-size:9px;">▲▌▌</span></div>
+  <div class="prog"><div class="pbar" style="width:90%"></div></div>
+  <div style="padding:14px 16px 10px;text-align:center;border-bottom:1px solid var(--b1);flex-shrink:0;">
+    <div id="ricon" style="font-size:26px;margin-bottom:5px;"></div>
+    <div id="rtitle" style="font-size:17px;font-weight:700;"></div>
+    <div id="rsub" style="font-size:11px;color:var(--t2);margin-top:3px;line-height:1.55;"></div>
+  </div>
+  <div class="roll" style="padding:13px 15px;" id="rbody"></div>
+</div>
+
+<!-- ═══════════ SCORE ═══════════ -->
+<div class="scr" id="SS">
+  <div class="sbar"><span>9:41</span><span style="font-size:9px;">▲▌▌</span></div>
+  <div class="prog"><div class="pbar" style="width:100%"></div></div>
+  <div class="roll" style="padding:20px 18px;" id="sbody"></div>
+</div>
+
+</div><!-- /phone -->
+<div class="label">Digital Storytelling · Edutainment</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────
+var R='', pts=0, choices=0, contacted=false, apologised=false;
+var rqs=[null,null,null];
+
+// ─── UTILS ───────────────────────────────────────────
+function show(id){
+  document.querySelectorAll('.scr').forEach(function(s){s.classList.remove('on');});
+  document.getElementById(id).classList.add('on');
+}
+
+var toastTimer=null;
+function toast(html){
+  var el=document.getElementById('toast');
+  el.innerHTML=html; el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){el.classList.remove('on');},3000);
+}
+
+function av(l,sz,g){
+  return '<div class="av" style="width:'+sz+'px;height:'+sz+'px;font-size:'+(sz*.38)+'px;background:'+g+';">'+l+'</div>';
+}
+
+var AV={K:'linear-gradient(135deg,#e84393,#9b5de5)',P:'linear-gradient(135deg,#f7b731,#e84393)',
+  J:'linear-gradient(135deg,#3a9bdc,#9b5de5)',S:'linear-gradient(135deg,#2dce89,#3a9bdc)',
+  M:'linear-gradient(135deg,#2dce89,#3a9bdc)',R:'linear-gradient(135deg,#9b5de5,#3a9bdc)'};
+
+// Append a chat bubble
+function bub(cid, o){
+  var c=document.getElementById(cid);
+  if(!c) return;
+  var w=document.createElement('div');
+  w.className='fi';
+  if(o.sys){
+    w.innerHTML='<div class="dlbl"'+(o.style?' style="'+o.style+'"':'')+'>'+o.text+'</div>';
+  } else if(o.me){
+    w.innerHTML='<div class="row me"><div class="col me"><div class="bbl me">'+o.text+'</div>'+(o.time?'<div class="tm r">'+o.time+'</div>':'')+'</div></div>';
+  } else {
+    var a=o.av?av(o.av,24,AV[o.av]||'#333'):'';
+    var bc='bbl'+(o.cls?' '+o.cls:'');
+    w.innerHTML='<div class="row">'+a+'<div class="col">'+(o.name?'<div class="nm">'+o.name+'</div>':'')+'<div class="'+bc+'">'+o.text+'</div>'+(o.time?'<div class="tm">'+o.time+'</div>':'')+'</div></div>';
+  }
+  c.appendChild(w);
+  c.scrollTop=c.scrollHeight;
+}
+
+// Show typing then fire callback
+function typing(cid, avl, cb, ms){
+  var c=document.getElementById(cid);
+  if(!c) return;
+  var a=avl?av(avl,24,AV[avl]||'#333'):'';
+  var t=document.createElement('div');
+  t.id='typ'; t.className='row fi';
+  t.innerHTML=a+'<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  c.appendChild(t); c.scrollTop=c.scrollHeight;
+  setTimeout(function(){
+    var x=document.getElementById('typ'); if(x) x.remove();
+    cb();
+  }, ms||1100);
+}
+
+// Build choice panel
+function choices_show(pid, lbl, btns){
+  var p=document.getElementById(pid);
+  var h='<div class="clbl">'+lbl+'</div>';
+  btns.forEach(function(b){
+    h+='<button class="cbtn'+(b.g?' g':b.b?' b':'')+'" onclick="'+b.fn+'">'
+      +'<span class="ci">'+b.i+'</span><span class="ct">'+b.t+'</span></button>';
+  });
+  p.innerHTML=h; p.style.display='block';
+}
+
+function hide_cp(pid){ var p=document.getElementById(pid); if(p) p.style.display='none'; }
+
+function addpts(n){ pts=Math.max(0,pts+n); choices++; }
+
+// ─── ROLE SELECT ─────────────────────────────────────
+function startAs(role){
+  R=role; pts=0; choices=0; contacted=false; apologised=false;
+  rqs=[null,null,null];
+  if(R==='W') runWitness();
+  else if(R==='M') runMaya();
+  else runKai();
+}
+
+// ─────────────────────────────────────────────────────
+// WITNESS PATH
+// ─────────────────────────────────────────────────────
+var wSteps=[], wLock=false;
+
+function runWitness(){
+  show('SW');
+  document.getElementById('wmsgs').innerHTML='<div class="dlbl">Tuesday · 8:47 PM</div>';
+  hide_cp('wcp');
+  wSteps=[
+    {av:'K',name:'Kai',text:'🎵 [voice note · 0:38 · forwarded]',time:'8:47 PM'},
+    {av:'K',name:'Kai',text:'💀💀 she recorded herself singing. I literally cannot.',time:'8:47 PM'},
+    {av:'P',name:'Priya',text:'omg no way 😭 the AUDACITY',time:'8:48 PM'},
+    {av:'J',name:'Jay',text:'wait does she think she\'s actually good?? 💀',time:'8:48 PM'},
+    {av:'P',name:'Priya',text:'someone screenshot this before she deletes it',time:'8:49 PM'},
+    {type:'C1'},
+    {av:'P',name:'Priya',text:'wait... does maya even know this is here',time:'8:51 PM'},
+    {av:'K',name:'Kai',text:'who cares she\'s so annoying anyway 🙄',time:'8:51 PM'},
+    {type:'C2'}
+  ];
+  wLock=false;
+  setTimeout(nextW, 500);
+}
+
+function nextW(){
+  if(wLock || !wSteps.length) return;
+  var s=wSteps.shift();
+  if(s.type==='C1'){ wLock=true; wC1(); return; }
+  if(s.type==='C2'){ wLock=true; wC2(); return; }
+  wLock=true;
+  typing('wmsgs', s.av, function(){
+    bub('wmsgs', s);
+    wLock=false;
+    setTimeout(nextW, 600+Math.random()*350);
+  }, 800+Math.random()*400);
+}
+
+function wC1(){
+  choices_show('wcp','The voice note is spreading. What do you do?',[
+    {i:'😂',t:'Send a laugh — everyone else is',b:true,fn:'wA1("l",-15)'},
+    {i:'🤐',t:'Say nothing. Just read.',b:true,fn:'wA1("q",-10)'},
+    {i:'😬',t:'"that\'s a bit much ngl"',g:true,fn:'wA1("p",20,\'that\\\'s a bit much ngl 😬\')'},
+    {i:'📢',t:'Screenshot it as evidence',g:true,fn:'wA1("s",10)'}
+  ]);
+}
+function wA1(c,p,txt){
+  addpts(p); hide_cp('wcp');
+  if(txt) bub('wmsgs',{me:true,text:txt,time:'8:50 PM'});
+  if(c==='s') toast('<b>Screenshot saved.</b> Evidence matters.');
+  wLock=false; setTimeout(nextW,700);
+}
+
+function wC2(){
+  choices_show('wcp','Kai called her annoying. The chat is agreeing. Now what?',[
+    {i:'💬',t:'"okay but that\'s actually messed up"',g:true,fn:'wA2("d",25,\'okay but that\\\'s actually messed up\')'},
+    {i:'✉',t:'DM Maya: "hey, are you okay?"',g:true,fn:'wA2("m",30)'},
+    {i:'🚪',t:'Leave the chat',fn:'wA2("x",-5)'},
+    {i:'😶',t:'Do nothing',b:true,fn:'wA2("n",-20)'}
+  ]);
+}
+function wA2(c,p,txt){
+  addpts(p); hide_cp('wcp');
+  if(txt) bub('wmsgs',{me:true,text:txt,time:'8:52 PM'});
+  if(c==='m'){ contacted=true; toast('<b>DM sent to Maya ✓</b><br>She\'ll see it tonight.'); }
+  setTimeout(function(){ show('SD'); startDM('W'); }, 1800);
+}
+
+// ─────────────────────────────────────────────────────
+// MAYA PATH
+// ─────────────────────────────────────────────────────
+function runMaya(){
+  show('SM');
+  document.getElementById('mmsgs').innerHTML='';
+  hide_cp('mcp');
+
+  var notifs=[
+    {delay:500,  color:'var(--t2)',  icon:'🔁', text:'<b>jay.k</b> reposted your post: "she really said let me try again 💀"'},
+    {delay:1400, color:'#e84343',    icon:'💬', text:'<b>kai_official:</b> she\'s gonna cry about this lmao'},
+    {delay:2400, color:'#e84343',    icon:'❤',  text:'<b>priya.x</b> and <b>22 others</b> liked jay\'s repost'},
+    {delay:3500, color:'#e84343',    icon:'💬', text:'<b>anon_user22:</b> does she know she can\'t sing lol'},
+    {delay:4600, color:'var(--t2)',  icon:'💬', text:'<b>anon_user49:</b> why do people post stuff like this'},
+    {delay:5500, color:'var(--green)',icon:'💚', text:'<b>sana_h:</b> this drawing is genuinely beautiful 💚'},
+    {delay:6400, type:'choice'}
+  ];
+
+  notifs.forEach(function(n){
+    if(n.type==='choice'){
+      setTimeout(mC1, n.delay); return;
+    }
+    setTimeout(function(){
+      var c=document.getElementById('mmsgs');
+      var el=document.createElement('div');
+      el.className='notif-item fi';
+      el.innerHTML='<div class="notif-dot" style="background:'+n.color+';"></div>'
+        +'<div><span style="font-size:14px;margin-right:6px;">'+n.icon+'</span>'+n.text+'</div>';
+      c.appendChild(el); c.scrollTop=c.scrollHeight;
+    }, n.delay);
+  });
+}
+
+function mC1(){
+  choices_show('mcp','47 notifications in 10 minutes. Your heart is racing. What do you do?',[
+    {i:'📸',t:'Screenshot everything and send to Sana',g:true,fn:'mA1("s",25)'},
+    {i:'🗑',t:'Delete the original post immediately',fn:'mA1("d",5)'},
+    {i:'🚫',t:'Block Kai and Jay',g:true,fn:'mA1("b",15)'},
+    {i:'📵',t:'Turn off your phone. Try to breathe.',fn:'mA1("o",0)'}
+  ]);
+}
+function mA1(c,p){
+  addpts(p); hide_cp('mcp');
+  var msgs={
+    s:'<b>Screenshots sent to Sana.</b><br>She replies: "omg I\'m coming over right now."',
+    d:'<b>Post deleted.</b> Jay\'s repost is still up. The comments are still spreading.',
+    b:'<b>Kai and Jay blocked.</b> Comments from others keep coming.',
+    o:'<b>Phone off.</b> You sit in the dark. Your hands are still shaking.'
+  };
+  toast(msgs[c]);
+  if(c==='s'){ contacted=true; }
+
+  setTimeout(function(){
+    var c2=document.getElementById('mmsgs');
+    var el=document.createElement('div');
+    el.className='notif-item fi';
+    el.style.borderColor='rgba(232,65,143,.25)';
+    el.innerHTML='<div class="notif-dot" style="background:var(--pink);"></div>'
+      +'<div><b>11:47 PM</b> · A DM from an unknown account.</div>';
+    c2.appendChild(el); c2.scrollTop=c2.scrollHeight;
+    setTimeout(function(){ show('SD'); startDM('M'); }, 1800);
+  }, 2200);
+}
+
+// ─────────────────────────────────────────────────────
+// KAI PATH
+// ─────────────────────────────────────────────────────
+function runKai(){
+  show('SK');
+  document.getElementById('kmsgs').innerHTML='<div class="dlbl">Tuesday · 1:07 AM</div>';
+  hide_cp('kcp');
+
+  var steps=[
+    {delay:600,  sys:true, text:'Kai opens a browser tab. Private mode.'},
+    {delay:1600, cls:'guilt', text:'🔍  "is sharing a voice note without permission illegal"'},
+    {delay:3200, sys:true, text:'[Tab closed]', style:'color:var(--t3);font-style:italic;'},
+    {delay:4400, cls:'guilt', text:'🔍  "cyberbullying without meaning to"'},
+    {delay:6000, cls:'guilt', text:'🔍  "how to apologise when you hurt someone online"'},
+    {delay:7400, sys:true, text:'[Tab closed again]', style:'color:var(--t3);font-style:italic;'},
+    {delay:8200, type:'clue'},
+    {delay:8400, type:'choice'}
+  ];
+
+  steps.forEach(function(s){
+    if(s.type==='clue'){
+      setTimeout(function(){ toast('<b>Notice:</b> Kai searched "is sharing a voice note illegal" at 1 AM. And closed the tab. That search tells you something.'); }, s.delay);
+      return;
+    }
+    if(s.type==='choice'){
+      setTimeout(kC1, s.delay); return;
+    }
+    setTimeout(function(){
+      bub('kmsgs',s);
+    }, s.delay);
+  });
+}
+
+function kC1(){
+  choices_show('kcp','It\'s 1 AM. You know it went too far. What do you actually do?',[
+    {i:'✉',t:'Write a real apology DM to Maya',g:true,fn:'kA1("a",30)'},
+    {i:'📢',t:'Post publicly: "I messed up. I\'m sorry."',g:true,fn:'kA1("p",25)'},
+    {i:'🗑',t:'Delete your account',fn:'kA1("d",10)'},
+    {i:'🌙',t:'Go to sleep. Deal with it tomorrow.',b:true,fn:'kA1("s",-10)'}
+  ]);
+}
+function kA1(c,p){
+  addpts(p); hide_cp('kcp');
+  var msgs={
+    a:'<b>Message sent to Maya:</b><br>"hey. i\'m really sorry. i should never have shared that. you don\'t have to reply."',
+    p:'<b>Post published.</b> Sana shares it. Three people reply: "it took guts to say this."',
+    d:'<b>Account deleted.</b> It doesn\'t undo what\'s already been shared.',
+    s:'<b>Phone face-down.</b> Maya is still awake.'
+  };
+  toast(msgs[c]);
+  if(c==='a'||c==='p'){ contacted=true; apologised=true; }
+  setTimeout(function(){ buildReflect(); show('SR'); }, 2200);
+}
+
+// ─────────────────────────────────────────────────────
+// DM SCREEN  (Maya receives anon; Witness reaches out)
+// ─────────────────────────────────────────────────────
+function startDM(from){
+  document.getElementById('dmsgs').innerHTML='<div class="dlbl">Tonight · 11:47 PM</div>';
+  hide_cp('dcp');
+
+  if(from==='M'){
+    // Maya: receives anonymous harassment
+    var anons=[
+      {delay:700,  text:'you know they all talk about you right. not just online.'},
+      {delay:2100, text:'why do you even still post lol'},
+      {delay:3700, text:'you moved schools and you\'re still the same. some people just don\'t fit anywhere.'}
+    ];
+    anons.forEach(function(a){
+      setTimeout(function(){ bub('dmsgs',{cls:'anon',text:a.text}); }, a.delay);
+    });
+    setTimeout(mDMChoice, 5100);
+
+  } else {
+    // Witness: decides whether to DM Maya
+    document.getElementById('dmhdr').innerHTML=
+      '<div class="av" style="width:32px;height:32px;font-size:12px;background:linear-gradient(135deg,var(--green),var(--blue));">M</div>'
+      +'<div><div style="font-size:12px;font-weight:700;">maya_art</div>'
+      +'<div style="font-size:10px;color:var(--t3);">Online · 11:45 PM</div></div>';
+    bub('dmsgs',{sys:true,text:'maya_art is online now'});
+    setTimeout(wDMChoice, 1400);
+  }
+}
+
+function mDMChoice(){
+  choices_show('dcp','Three messages from a stranger who knows your name.',[
+    {i:'📸',t:'Screenshot + report the account',g:true,fn:'mDM("r",30)'},
+    {i:'🚫',t:'Block immediately',g:true,fn:'mDM("b",20)'},
+    {i:'💬',t:'Reply: "I know who this is."',fn:'mDM("p",5)'},
+    {i:'📵',t:'Put phone face-down. Try to sleep.',b:true,fn:'mDM("s",-10)'}
+  ]);
+}
+function mDM(c,p){
+  addpts(p); hide_cp('dcp');
+  var t={r:'<b>Report sent ✓</b><br>Evidence saved. The right move.',
+    b:'<b>Blocked.</b> It stops here for now.',
+    p:'You typed back. The account went silent.',
+    s:'The phone buzzed twice more in the dark.'};
+  toast(t[c]);
+  setTimeout(function(){ buildReflect(); show('SR'); }, 2200);
+}
+
+function wDMChoice(){
+  choices_show('dcp','You can see Maya is online. It\'s almost midnight.',[
+    {i:'💙',t:'"hey. i saw what happened. are you okay?"',g:true,fn:'wDM("y",30)'},
+    {i:'💤',t:'It\'s late — you\'ll check tomorrow',fn:'wDM("w",-5)'},
+    {i:'📵',t:'You don\'t want to make it awkward',b:true,fn:'wDM("n",-15)'}
+  ]);
+}
+function wDM(c,p){
+  addpts(p); hide_cp('dcp');
+  if(c==='y'){
+    contacted=true;
+    bub('dmsgs',{me:true,text:'hey. i saw what happened. are you okay?',time:'11:47 PM'});
+    toast('<b>Message sent ✓</b><br>Sometimes one message is enough.');
+    setTimeout(function(){
+      bub('dmsgs',{sys:true,text:'Read · 11:48 PM'});
+      setTimeout(function(){
+        typing('dmsgs','M',function(){
+          bub('dmsgs',{av:'M',name:'maya_art',text:'yeah. still here. thank you for saying something 💙',time:'11:52 PM'});
+          setTimeout(function(){ buildReflect(); show('SR'); }, 1800);
+        }, 1400);
+      }, 800);
+    }, 1200);
+  } else {
+    toast(c==='w'?'Maya is still online at 1 AM.':'The window closed. Maya went offline at 2:13 AM.');
+    setTimeout(function(){ buildReflect(); show('SR'); }, 2200);
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// REFLECTION
+// ─────────────────────────────────────────────────────
+var RD={
+  W:{icon:'👀',title:'You were the witness',sub:'Reflect honestly.',
+    color:'var(--blue)',
+    advice:'Bystanders have more power than they think. You don\'t have to make a speech. One private message, one kind comment, one report — it shifts what happens. You were in the room. That matters.',
+    qs:[
+      {q:'In the group chat, what would you actually do in real life?',
+       opts:['Laugh along to fit in','Stay quiet — not my place','Say something, even if awkward','Tell a trusted adult later']},
+      {q:'Did it feel familiar — noticing something wrong but staying quiet?',
+       opts:['Yes, I\'ve been there','Not really — I\'d speak up','I\'d tell someone I trust','I\'m not sure']},
+      {q:'Did you know staying silent in a group chat can make things feel worse for the target?',
+       opts:['I never thought about it that way','Yes — uncomfortable to admit','I\'d argue it\'s complicated','I knew, but it\'s hard']}
+    ]},
+  M:{icon:'💙',title:'You walked in Maya\'s shoes',sub:'This was heavy. Take a moment.',
+    color:'var(--green)',
+    advice:'If any part of Maya\'s story felt personal — you\'re not alone, and it\'s not your fault. Posting your work, sharing yourself, being yourself: none of that makes you deserve unkindness. Talking to someone you trust is always the right first step.',
+    qs:[
+      {q:'When Maya\'s notifications blew up — did any of that feel familiar?',
+       opts:['Yes, something like this happened to me','I\'ve seen it happen to friends','Not personally, but I felt it','No, this was new to me']},
+      {q:'If something like this happened to you, who would you feel safe telling?',
+       opts:['A close friend','A parent or family member','A teacher or counsellor','Honestly, probably nobody']},
+      {q:'What do you think helped Maya most?',
+       opts:['Documenting and reporting','Reaching out to someone she trusted','Going offline to breathe','Being honest about what happened']}
+    ]},
+  K:{icon:'🪞',title:'You saw Kai\'s side',sub:'Not about blame. About understanding.',
+    color:'var(--amber)',
+    advice:'Kai isn\'t a villain. That\'s the whole point. Most online cruelty comes from people who wanted to fit in, who didn\'t think it through. The 1 AM search history tells you what Kai actually knew. Recognising that moment — before it becomes a search at 1 AM — is what changes it.',
+    qs:[
+      {q:'Kai shared the clip to get laughs — and it worked. Does that make it okay?',
+       opts:['No — impact matters more than intent','It\'s complicated — no harm was meant','Yes, it was just a joke','I\'m genuinely not sure']},
+      {q:'"Is sharing a voice note illegal" — searched at 1 AM, then tab closed. What does that tell you?',
+       opts:['They knew something felt wrong','They were just curious','Anyone would search that','That search says everything']},
+      {q:'If you\'ve ever done something like Kai — what would you do differently?',
+       opts:['Ask before sharing. Always.','Think: how would this feel if it were me?','Apologise directly and quickly','I haven\'t been in that situation']}
+    ]}
+};
+
+function buildReflect(){
+  var d=RD[R];
+  document.getElementById('ricon').textContent=d.icon;
+  document.getElementById('rtitle').textContent=d.title;
+  document.getElementById('rsub').textContent=d.sub;
+  rqs=[null,null,null];
+
+  var h='';
+  d.qs.forEach(function(q,qi){
+    h+='<div style="margin-bottom:18px;">';
+    h+='<div style="font-size:13px;font-weight:500;color:var(--t1);margin-bottom:8px;line-height:1.55;">'+(qi+1)+'. '+q.q+'</div>';
+    q.opts.forEach(function(o,oi){
+      h+='<button class="obtn" id="rq'+qi+'o'+oi+'" onclick="pickR('+qi+','+oi+')">'+o+'</button>';
+    });
+    if(qi<2) h+='<div style="height:1px;background:var(--b1);margin:12px 0 0;"></div>';
+    h+='</div>';
+  });
+
+  h+='<div id="radv" style="display:none;" class="insight"><div class="ins-lbl" style="color:'+d.color+';">Something to carry with you</div><div class="ins-txt">'+d.advice+'</div></div>';
+
+  h+='<div id="rres" style="display:none;">';
+  h+='<div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;">If you need support</div>';
+  [{e:'🌐',n:'Cybersmile Foundation',d:'cybersmile.org — global support for cyberbullying'},
+   {e:'💬',n:'Talk to someone you trust',d:'A teacher, parent, or school counsellor. You don\'t have to carry this.'},
+   {e:'📱',n:'Platform tools work',d:'Screenshot first. Then report and block.'}
+  ].forEach(function(r){
+    h+='<div class="insight" style="border-color:var(--b2);display:flex;gap:10px;align-items:flex-start;">'
+      +'<span style="font-size:17px;flex-shrink:0;">'+r.e+'</span>'
+      +'<div><div style="font-size:12px;font-weight:600;color:var(--t1);margin-bottom:2px;">'+r.n+'</div>'
+      +'<div class="ins-txt">'+r.d+'</div></div></div>';
+  });
+  h+='</div>';
+
+  h+='<button class="btnmain" id="rgo" onclick="goScore()" disabled style="margin-bottom:8px;">See your impact \u2192</button>';
+  h+='<div id="rhint" style="font-size:11px;color:var(--t3);text-align:center;margin-bottom:16px;">Answer all 3 questions to continue</div>';
+
+  document.getElementById('rbody').innerHTML=h;
+}
+
+function pickR(qi,oi){
+  RD[R].qs[qi].opts.forEach(function(_,i){
+    var e=document.getElementById('rq'+qi+'o'+i); if(e) e.classList.remove('sel');
+  });
+  var b=document.getElementById('rq'+qi+'o'+oi); if(b) b.classList.add('sel');
+  rqs[qi]=oi;
+  if(rqs.every(function(a){return a!==null;})){
+    var adv=document.getElementById('radv'); if(adv) adv.style.display='block';
+    var res=document.getElementById('rres'); if(res) res.style.display='block';
+    var go=document.getElementById('rgo');   if(go)  go.disabled=false;
+    var h=document.getElementById('rhint');  if(h)   h.style.display='none';
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// SCORE
+// ─────────────────────────────────────────────────────
+function goScore(){ buildScore(); show('SS'); }
+function buildScore(){
+  var pct=Math.min(100,Math.max(0,Math.round((pts/120)*100)));
+  var lv=pct>=60?'h':pct>=30?'m':'l';
+  var O={
+    h:{e:'💙',t:'You showed up',
+       d:'Your choices made a difference. Someone felt less alone.',
+       m:'The small things matter most — the DM you sent, the comment you made. You might never know you changed someone\'s night. But you probably did.'},
+    m:{e:'🌱',t:'You were learning',
+       d:'Some choices helped. Some didn\'t. That\'s honest.',
+       m:'Most people are somewhere in the middle — not cruel, but not always sure when to act. The fact that you felt the discomfort is the first step.'},
+    l:{e:'🪞',t:'You stayed silent',
+       d:'This story shows what it looks like from inside the silence.',
+       m:'Staying quiet has a cost — not to you, but to the person on the other end of those notifications. One message is enough to change it.'}
+  };
+  var o=O[lv];
+  var h='<div style="text-align:center;margin-bottom:16px;">'
+    +'<div style="width:66px;height:66px;border-radius:50%;background:rgba(155,93,229,.12);border:2px solid rgba(155,93,229,.22);display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 10px;">'+o.e+'</div>'
+    +'<div style="font-size:20px;font-weight:700;margin-bottom:5px;">'+o.t+'</div>'
+    +'<div style="font-size:12px;color:var(--t2);line-height:1.6;">'+o.d+'</div></div>'
+    +'<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:5px;"><span>Empathy score</span><span>'+pts+' pts</span></div>'
+    +'<div class="sbar-track" style="margin-bottom:6px;"><div class="sbar-fill" id="sfill"></div></div>'
+    +'<div style="font-size:11px;color:var(--t3);text-align:center;margin-bottom:14px;">'+choices+' choices made</div>'
+    +'<div class="insight"><div class="ins-lbl">What happened here</div><div class="ins-txt">'+o.m+'</div></div>'
+    +'<div style="font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--t3);margin-bottom:8px;">In real life, you can:</div>'
+    +'<div class="tip">💬 Tell a trusted adult — teacher, parent, counsellor</div>'
+    +'<div class="tip" style="border-color:var(--blue);">📸 Screenshot before blocking or reporting</div>'
+    +'<div class="tip" style="border-color:var(--green);">💙 Check on friends — one message can be enough</div>'
+    +'<button class="btnmain" onclick="restart()" style="margin-top:12px;">Play again — try a different role</button>'
+    +'<div style="font-size:10px;color:var(--t3);text-align:center;margin-top:8px;">All three roles tell the full story</div>'
+    +'<div style="height:16px;"></div>';
+  document.getElementById('sbody').innerHTML=h;
+  setTimeout(function(){ var f=document.getElementById('sfill'); if(f) f.style.width=pct+'%'; },400);
+}
+
+function restart(){
+  R=''; pts=0; choices=0; contacted=false; apologised=false; rqs=[null,null,null];
+  show('S1');
+}
+</script>
+</body>
+</html>
